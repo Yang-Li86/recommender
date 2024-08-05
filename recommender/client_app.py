@@ -3,7 +3,7 @@
 from flwr.client import NumPyClient, ClientApp
 from flwr.common import Context
 
-from recommender_2.task import (
+from recommender.task import (
     Net,
     DEVICE,
     load_data,
