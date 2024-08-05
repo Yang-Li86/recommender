@@ -1,14 +1,14 @@
-"""recommender: A Flower / PyTorch app."""
+"""recommender-2: A Flower / PyTorch app."""
 
 from flwr.common import Context, ndarrays_to_parameters
 from flwr.server import ServerApp, ServerAppComponents, ServerConfig
 from flwr.server.strategy import FedAvg
 
-from recommender.task import GCN, get_weights
+from recommender_2.task import Net, get_weights
 
 
 # Initialize model parameters
-ndarrays = get_weights(GCN(in_channels=5227, hidden_channels=16, out_channels=1))
+ndarrays = get_weights(Net(in_channels=5227, hidden_channels=16, out_channels=1))
 parameters = ndarrays_to_parameters(ndarrays)
 
 def server_fn(context: Context):
