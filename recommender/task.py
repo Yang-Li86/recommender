@@ -36,13 +36,15 @@ class GCN(torch.nn.Module):
         edge_pred = self.fc(torch.cat([x[edge_index[0]], x[edge_index[1]]], dim=1))
         return edge_pred.squeeze()
     
-data = None  # Cache FederatedDataset
+data = None  # Cache data
 partitioner = None # Cache partitioner
+entire_dataset = None # Cache dataset
 
 def load_data(partition_id: int, num_partitions: int):
     """Load partition Amazon Reviews data."""
     global data
     global partitioner
+    global entire_dataset
     if data is None:
         data = pd.read_csv("/home/yang/Documents/GitHub/recommender/data/ratings_Electronics (1).csv")
         data = data.head(5000) # crop data for dev
@@ -57,10 +59,10 @@ def load_data(partition_id: int, num_partitions: int):
 
         data['userId'] = user_encoder.fit_transform(data['userId'])
         data['productId'] = item_encoder.fit_transform(data['productId'])
-        dataset = Dataset.from_pandas(data)
+        entire_dataset = Dataset.from_pandas(data)
 
         partitioner = IidPartitioner(num_partitions)
-        partitioner.dataset = dataset
+        partitioner.dataset = entire_dataset
 
     partition = partitioner.load_partition(partition_id)
 
@@ -69,17 +71,16 @@ def load_data(partition_id: int, num_partitions: int):
 
     partition_train_test = partition.train_test_split(test_size=0.2, seed=42)
     # train data processing for GCN
-    train_geometric_data_object, _ = get_edges(partition_train_test["train"])
-    train_feature_engineered_data, train_node_features = get_nodes(partition, train_geometric_data_object)
-    trainloader = DataLoader([train_feature_engineered_data], batch_size=1, shuffle=True)
+    train_geometric_data_object, _ = get_edges(partition_train_test["train"], entire_dataset)
+    # train_feature_engineered_data, train_node_features = get_nodes(entire_dataset, train_geometric_data_object)
+    trainloader = DataLoader([train_geometric_data_object], batch_size=1, shuffle=True)
     # test data processing for GCN
-    test_geometric_data_object, test_edge_attributes = get_edges(partition_train_test["test"])
-    test_feature_engineered_data, test_node_features = get_nodes(partition, test_geometric_data_object)
-    # testloader = DataLoader(partition_train_test["test"], batch_size=32) # not sure
-    return trainloader, test_geometric_data_object, test_edge_attributes
-# , test_feature_engineered_data, test_edge_attributes
+    test_geometric_data_object, test_edge_attributes = get_edges(partition_train_test["test"], entire_dataset)
+    # test_feature_engineered_data, test_node_features = get_nodes(entire_dataset, test_geometric_data_object)
+    testloader = DataLoader([test_geometric_data_object], batch_size=32) # not sure
+    return trainloader, test_geometric_data_object, testloader, test_edge_attributes
     
-def get_edges(train_dataset):
+def get_edges(train_dataset, entire_dataset):
     train_data_df = train_dataset.to_pandas()
     # Create edge index from user-item interactions
     # UserWarning: Creating a tensor from a list of numpy.ndarrays is extremely slow. 
@@ -100,14 +101,24 @@ def get_edges(train_dataset):
     # Create edge attributes (ratings)
     edge_attr = torch.tensor(train_data_df['Rating'].values, dtype=torch.float)
 
-    # Create the PyTorch Geometric data object
-    data = Data(edge_index=edge_index, edge_attr=edge_attr)
+    dataset_df = entire_dataset.to_pandas()
+    num_users = dataset_df['userId'].nunique()
+    # print(f"Number of users: {num_users}")
+    num_items = dataset_df['productId'].nunique()
+    # print(f"Number of items: {num_items}")
+    num_nodes = num_users + num_items
 
-    # print(data)
+    # Create node features
+    node_features = torch.tensor(np.eye(num_nodes), dtype=torch.float)
+
+    # Create the PyTorch Geometric data object
+    data = Data(edge_index=edge_index, edge_attr=edge_attr, x=node_features)
+
+    print(data)
 
     return data, edge_attr
 
-def get_nodes(partition, data, target_size=606):
+def get_nodes(partition, data):
     dataset_df = partition.to_pandas()
     num_users = dataset_df['userId'].nunique()
     # print(f"Number of users: {num_users}")
@@ -119,11 +130,13 @@ def get_nodes(partition, data, target_size=606):
     node_features = torch.tensor(np.eye(num_nodes), dtype=torch.float)
     
     # Pad node features to the target size
-    if num_nodes < target_size:
-        padding = np.zeros((target_size - num_nodes, num_nodes), dtype=np.float32)
-        node_features = np.vstack((node_features, padding))
-    elif num_nodes > target_size:
-        raise ValueError(f"Number of nodes ({num_nodes}) exceeds the target size ({target_size}).")
+    # if num_nodes < target_size:
+    #     row_padding = np.zeros((target_size - num_nodes, num_nodes), dtype=np.float32)
+    #     col_padding = np.zeros((target_size, target_size - node_features.shape[1]), dtype=np.float32)
+    #     node_features = np.vstack((node_features, row_padding))
+    #     node_features = np.hstack((node_features, col_padding))
+    # elif num_nodes > target_size:
+    #     raise ValueError(f"Number of nodes ({num_nodes}) exceeds the target size ({target_size}).")
 
     node_features = torch.tensor(node_features, dtype=torch.float)
 
@@ -134,6 +147,8 @@ def get_nodes(partition, data, target_size=606):
     print(data)
 
     return data, node_features
+
+
 
 def train(net, trainloader, valloader, epochs, device, val_edge_attr):
     """Train the model on the training set."""
@@ -178,14 +193,11 @@ def set_weights(net, parameters):
     net.load_state_dict(state_dict, strict=True)
 
 
-# class TestLoadData(unittest.TestCase):
-#     def test_load_data(self):
-#         for i in range(10):
-#             try:
-#                 train_data, test_data, test_edge = load_data(i, 10)
-#                 print(f"Partition {i} loaded successfully with node features size.")
-#             except Exception as e:
-#                 print(f"Error loading partition {i}: {e}")
+class TestLoadData(unittest.TestCase):
+    def test_load_data(self):
+        for i in range(10):
+            train_data, test_data, test_loader, test_edge = load_data(i, 10)
+            print(f"Partition {i} loaded successfully with node features size.")
 
-# if __name__ == "__main__":
-#     unittest.main()
+if __name__ == "__main__":
+    unittest.main()

@@ -8,7 +8,7 @@ from recommender.task import GCN, get_weights
 
 
 # Initialize model parameters
-ndarrays = get_weights(GCN(in_channels=606, hidden_channels=16, out_channels=1))
+ndarrays = get_weights(GCN(in_channels=5227, hidden_channels=16, out_channels=1))
 parameters = ndarrays_to_parameters(ndarrays)
 
 def server_fn(context: Context):

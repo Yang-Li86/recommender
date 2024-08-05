@@ -37,7 +37,7 @@ class FlowerClient(NumPyClient):
 
     def evaluate(self, parameters, config):
         set_weights(self.net, parameters)
-        loss, accuracy = test(self.net, self.valloader)
+        loss, accuracy = test(self.net, self.valloader, self.val_edge_attr)
         return loss, len(self.valloader.dataset), {"accuracy": accuracy}
 
 
@@ -45,8 +45,8 @@ def client_fn(context: Context):
     # Load model and data
     partition_id = context.node_config["partition-id"]
     num_partitions = context.node_config["num-partitions"]
-    trainloader, valloader, val_edge_attributes = load_data(partition_id, num_partitions)
-    net = GCN(in_channels=606, hidden_channels=16, out_channels=1).to(DEVICE)
+    trainloader, testdataobject, valloader, val_edge_attributes = load_data(partition_id, num_partitions)
+    net = GCN(in_channels=5227, hidden_channels=16, out_channels=1).to(DEVICE)
     local_epochs = context.run_config["local-epochs"]
 
     # Return Client instance
