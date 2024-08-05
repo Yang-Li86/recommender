@@ -44,7 +44,7 @@ def load_data(partition_id: int, num_partitions: int):
     global data
     global partitioner
     if data is None:
-        data = pd.read_csv("/home/yang/Documents/Kafka_recommender_vs_flower/recommender/data/ratings_Electronics (1).csv")
+        data = pd.read_csv("/home/yang/Documents/GitHub/recommender/data/ratings_Electronics (1).csv")
         data = data.head(5000) # crop data for dev
         data.rename(columns = {'AKM1MP6P0OYPR':'userId', '0132793040':'productId', '5.0':'Rating', '1365811200':'timestamp'}, inplace = True)
         # Clean the data
@@ -65,37 +65,37 @@ def load_data(partition_id: int, num_partitions: int):
     partition = partitioner.load_partition(partition_id)
 
     # Print the size of the partition
-    print(f"Partition {partition_id} size: {len(partition)}")
+    # print(f"Partition {partition_id} size: {len(partition)}")
 
     partition_train_test = partition.train_test_split(test_size=0.2, seed=42)
     # train data processing for GCN
-    train_geometric_data_object, _ = construct_graph(partition_train_test["train"])
-    train_feature_engineered_data, train_node_features = feature_engineering(partition, train_geometric_data_object)
+    train_geometric_data_object, _ = get_edges(partition_train_test["train"])
+    train_feature_engineered_data, train_node_features = get_nodes(partition, train_geometric_data_object)
     trainloader = DataLoader([train_feature_engineered_data], batch_size=1, shuffle=True)
     # test data processing for GCN
-    test_geometric_data_object, test_edge_attributes = construct_graph(partition_train_test["test"])
-    test_feature_engineered_data, test_node_features = feature_engineering(partition, test_geometric_data_object)
+    test_geometric_data_object, test_edge_attributes = get_edges(partition_train_test["test"])
+    test_feature_engineered_data, test_node_features = get_nodes(partition, test_geometric_data_object)
     # testloader = DataLoader(partition_train_test["test"], batch_size=32) # not sure
     return trainloader, test_geometric_data_object, test_edge_attributes
 # , test_feature_engineered_data, test_edge_attributes
     
-def construct_graph(train_dataset):
+def get_edges(train_dataset):
     train_data_df = train_dataset.to_pandas()
     # Create edge index from user-item interactions
     # UserWarning: Creating a tensor from a list of numpy.ndarrays is extremely slow. 
     # Please consider converting the list to a single numpy.ndarray with numpy.array() before converting to a tensor. 
     # (Triggered internally at ../torch/csrc/utils/tensor_new.cpp:275.)
-    # edge_index = torch.tensor([train_data_df['userId'].values, train_data_df['productId'].values], dtype=torch.long)
+    edge_index = torch.tensor([train_data_df['userId'].values, train_data_df['productId'].values], dtype=torch.long)
 
-    # Convert the columns to numpy arrays
-    user_ids = train_data_df['userId'].values
-    product_ids = train_data_df['productId'].values
+    # # Convert the columns to numpy arrays
+    # user_ids = train_data_df['userId'].values
+    # product_ids = train_data_df['productId'].values
 
-    # Stack the arrays to create a 2D numpy array
-    edge_index_array = np.vstack((user_ids, product_ids))
+    # # Stack the arrays to create a 2D numpy array
+    # edge_index_array = np.vstack((user_ids, product_ids))
 
-    # Convert the numpy array to a tensor
-    edge_index = torch.tensor(edge_index_array, dtype=torch.long)
+    # # Convert the numpy array to a tensor
+    # edge_index = torch.tensor(edge_index_array, dtype=torch.long)
 
     # Create edge attributes (ratings)
     edge_attr = torch.tensor(train_data_df['Rating'].values, dtype=torch.float)
@@ -107,7 +107,7 @@ def construct_graph(train_dataset):
 
     return data, edge_attr
 
-def feature_engineering(partition, data, target_size=606):
+def get_nodes(partition, data, target_size=606):
     dataset_df = partition.to_pandas()
     num_users = dataset_df['userId'].nunique()
     # print(f"Number of users: {num_users}")
