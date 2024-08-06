@@ -39,7 +39,7 @@ class Net(torch.nn.Module):
         return edge_pred.squeeze()
 
 def load_data(split_ratio=0.2):
-    url = "/home/yang/Documents/new-recommender/data/ratings_Electronics (1).csv"
+    url = "/home/yang/Documents/GitHub/recommender/data/ratings_Electronics (1).csv"
     df = pd.read_csv(url)
     df.rename(columns={'AKM1MP6P0OYPR': 'userId', '0132793040': 'productId', '5.0': 'Rating', '1365811200': 'timestamp'}, inplace=True)
     df = df.head(5000)
@@ -61,11 +61,17 @@ def load_data(split_ratio=0.2):
     num_nodes = num_users + num_items
     node_features = torch.eye(num_nodes)
     data = Data(edge_index=edge_index, edge_attr=edge_attr, x=node_features)
+
+    # partitioner = IidPartitioner(num_partitions)
+    # partitioner.dataset = data
+    # partition = partitioner.load_partition(partition_id)
     
     trainloader = DataLoader([data], batch_size=1, shuffle=True)
     testloader = DataLoader([data], batch_size=1, shuffle=False)
     
     return trainloader, testloader
+
+# a, b = load_data(1, 3)
 
 
 def train(net, trainloader, valloader, epochs, device):
