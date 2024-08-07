@@ -1,4 +1,8 @@
 """recommender-2: A Flower / PyTorch app."""
+# flower-superlink --insecure
+# flower-server-app server_app:app --superlink 127.0.0.1:9091
+# flower-client-app client_app:app --insecure --superlink 127.0.0.1:9092
+# flower-client-app client_app1:app --insecure --superlink 127.0.0.1:9092
 
 import pandas as pd
 import numpy as np
@@ -17,7 +21,8 @@ from sklearn.metrics import mean_squared_error, mean_absolute_error
 from sklearn.model_selection import train_test_split
 
 
-DEVICE = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+# DEVICE = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+DEVICE = torch.device("cpu")
 
 
 class Net(torch.nn.Module):

@@ -1,5 +1,8 @@
 """recommender-2: A Flower / PyTorch app."""
 
+import sys
+sys.path.append('/home/yang/Documents/GitHub/recommender')
+
 from flwr.common import Context, ndarrays_to_parameters
 from flwr.server import ServerApp, ServerAppComponents, ServerConfig
 from flwr.server.strategy import FedAvg, FedAdam
@@ -13,7 +16,8 @@ parameters = ndarrays_to_parameters(ndarrays)
 
 def server_fn(context: Context):
     # Read from config
-    num_rounds = context.run_config["num-server-rounds"]
+    # num_rounds = context.run_config["num-server-rounds"]
+    num_rounds = context.run_config.get("num-server-rounds", 10)
 
     # Define strategy
     strategy = FedAvg(

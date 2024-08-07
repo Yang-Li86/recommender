@@ -30,12 +30,12 @@ clientapp = "recommender.client_app:app"
 num-server-rounds = 3
 local-epochs = 1
 
-[tool.flwr.federations]
-default = "local-simulation"
+# [tool.flwr.federations]
+# default = "local-simulation"
 
-[tool.flwr.federations.local-simulation]
-options.num-supernodes = 2
+# [tool.flwr.federations.local-simulation]
+# options.num-supernodes = 2
 
-[tool.flwr.federations.ld]
-address = "127.0.0.1:9093"
-insecure = true
+# [tool.flwr.federations.ld]
+# address = "127.0.0.1:9093"
+# insecure = true

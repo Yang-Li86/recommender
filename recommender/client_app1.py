@@ -46,7 +46,7 @@ def client_fn(context: Context):
     # Load model and data
     net = Net(in_channels=5227, hidden_channels=16, out_channels=1).to(DEVICE)
     # partition_id = context.node_config["partition-id"]
-    partition_id = context.node_config.get("partition-id", 0)
+    partition_id = context.node_config.get("partition-id", 1)
     # num_partitions = context.node_config["num-partitions"]
     num_partitions = context.node_config.get("num-partitions", 2)
     trainloader, valloader = load_data()
