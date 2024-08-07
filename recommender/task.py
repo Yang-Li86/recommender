@@ -67,9 +67,31 @@ def load_data(split_ratio=0.2):
     node_features = torch.eye(num_nodes)
     data = Data(edge_index=edge_index, edge_attr=edge_attr, x=node_features)
 
-    # partitioner = IidPartitioner(num_partitions)
-    # partitioner.dataset = data
-    # partition = partitioner.load_partition(partition_id)
+    # Randomly partition nodes into clients
+    # node_indices = np.random.permutation(num_nodes)
+    # client_partitions = np.array_split(node_indices, num_partitions)
+
+    # client_data = []
+
+    # for client_nodes in client_partitions:
+    #     # Create a mask for the nodes that belong to this client
+    #     mask = torch.zeros(num_nodes, dtype=torch.bool)
+    #     mask[client_nodes] = True
+
+    #     # Filter the edges to include only those where both nodes are in the client's partition
+    #     edge_mask = mask[data.edge_index[0]] & mask[data.edge_index[1]]
+
+    #     # Create the subgraph
+    #     subgraph = Data(x=data.x[mask],
+    #                     edge_index=data.edge_index[:, edge_mask],
+    #                     edge_attr=data.edge_attr[edge_mask]
+    #     )
+
+    #     client_data.append(subgraph)
+    # # partitioner = IidPartitioner(num_partitions)
+    # # partitioner.dataset = data
+    # # partition = partitioner.load_partition(partition_id)
+    # print(client_data)
     
     trainloader = DataLoader([data], batch_size=1, shuffle=True)
     testloader = DataLoader([data], batch_size=1, shuffle=False)
