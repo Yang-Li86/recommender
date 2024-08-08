@@ -5,7 +5,6 @@ sys.path.append('/home/yang/Documents/GitHub/recommender')
 
 from flwr.client import NumPyClient, ClientApp
 from flwr.common import Context
-
 from logging import INFO, DEBUG
 from flwr.common.logger import log, configure
 
@@ -21,7 +20,7 @@ from recommender.task import (
     test,
 )
 
-configure(identifier="client1", filename="client1_log.txt")
+configure(identifier="client2", filename="client2_log.txt")
 
 # Define Flower Client and client_fn
 class FlowerClient(NumPyClient):
@@ -54,7 +53,7 @@ def client_fn(context: Context):
     # Load model and data
     net = Net(in_channels=5227, hidden_channels=16, out_channels=1).to(DEVICE)
     # partition_id = context.node_config["partition-id"]
-    partition_id = context.node_config.get("partition-id", 1)
+    partition_id = context.node_config.get("partition-id", 2)
     # num_partitions = context.node_config["num-partitions"]
     num_partitions = context.node_config.get("num-partitions", 3)
     trainloader, valloader = load_data()

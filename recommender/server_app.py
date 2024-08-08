@@ -23,7 +23,8 @@ def server_fn(context: Context):
     strategy = FedAvg(
         fraction_fit=1.0,
         fraction_evaluate=1.0,
-        min_available_clients=2,
+        min_available_clients=3,
+        min_fit_clients=3,
         initial_parameters=parameters,
     )
     config = ServerConfig(num_rounds=num_rounds)
